@@ -43,6 +43,15 @@ export async function POST(req: Request) {
       data: { name, email, password: hashedPassword },
     });
 
+    await prisma.eventLog.create({
+      data: {
+        type: "register",
+        message: `تسجيل مستخدم جديد: ${name ?? email}`,
+        userId: user.id,
+        metadata: JSON.stringify({ name, email }),
+      },
+    });
+
     return NextResponse.json(
       {
         id: user.id,

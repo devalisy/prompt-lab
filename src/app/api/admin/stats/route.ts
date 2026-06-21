@@ -31,10 +31,24 @@ export async function GET() {
       },
     });
 
+    const recentEvents = await prisma.eventLog.findMany({
+      take: 10,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        type: true,
+        message: true,
+        userId: true,
+        createdAt: true,
+        user: { select: { name: true, email: true } },
+      },
+    });
+
     return apiResponse({
       total: { users: totalUsers, prompts: totalPrompts, categories: totalCategories, likes: totalLikes, comments: totalComments },
       categoryDistribution: categoryDistribution.map((c) => ({ id: c.id, name: c.name, count: c._count.prompts })),
       recentPrompts,
+      recentEvents,
     });
   } catch (error) {
     return errorResponse(error instanceof Error ? error.message : "فشل جلب الإحصائيات", 500);

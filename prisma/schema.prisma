@@ -181,3 +181,17 @@ model SavedSkill {
 
   @@unique([userId, skillId])
 }
+
+model EventLog {
+  id        String   @id @default(cuid())
+  type      String
+  message   String
+  userId    String?
+  metadata  String   @default("{}")
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([createdAt])
+}

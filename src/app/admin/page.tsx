@@ -12,13 +12,14 @@ import { Modal } from "@/components/ui/Modal";
 import {
   Users, Quotes, Tag, Trash, Pencil, Shield, ArrowLeft, Plus,
   MagnifyingGlass, CaretLeft, CaretRight, Eye, EyeSlash,
-  ChartBar, Stack, UserCircle
+  ChartBar, Stack, UserCircle, ClockCounterClockwise
 } from "@phosphor-icons/react";
 
 interface AdminStats {
   total: { users: number; prompts: number; categories: number; likes: number; comments: number };
   categoryDistribution: { id: string; name: string; count: number }[];
   recentPrompts: { id: string; title: string; createdAt: string; author: { name: string } | null; _count: { likes: number } }[];
+  recentEvents: { id: string; type: string; message: string; userId: string | null; createdAt: string; user: { name: string | null; email: string } | null }[];
 }
 
 interface AdminUser {
@@ -230,6 +231,22 @@ export default function AdminPage() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-xl border border-border-light bg-surface-secondary p-4">
+                    <h3 className="text-xs font-semibold text-text-primary mb-3">آخر الأحداث والنشاطات</h3>
+                    <div className="space-y-1">
+                      {stats.recentEvents.length === 0 && <p className="text-xs text-text-muted py-4 text-center">لا توجد أحداث بعد</p>}
+                      {stats.recentEvents.map(e => (
+                        <div key={e.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-surface-elevated transition-colors">
+                          <div className="size-6 rounded-full bg-accent/10 flex items-center justify-center shrink-0"><ClockCounterClockwise weight="bold" className="size-3 text-accent" /></div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs text-text-primary truncate">{e.message}</p>
+                            <p className="text-[10px] text-text-muted">{new Date(e.createdAt).toLocaleDateString("ar-SA")} — {e.user?.name ?? e.user?.email ?? "—"}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="rounded-xl border border-border-light bg-surface-secondary p-4">
                     <h3 className="text-xs font-semibold text-text-primary mb-3">توزيع البرومتات حسب التصنيف</h3>
                     <div className="space-y-2">
