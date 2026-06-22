@@ -42,7 +42,7 @@ export async function GET() {
         createdAt: true,
         user: { select: { name: true, email: true } },
       },
-    });
+    }).catch(() => []);
 
     return apiResponse({
       total: { users: totalUsers, prompts: totalPrompts, categories: totalCategories, likes: totalLikes, comments: totalComments },
