@@ -4,14 +4,11 @@ import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { authConfig } from "@/lib/auth.config";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
-  session: { strategy: "jwt" },
-  pages: {
-    signIn: "/login",
-    error: "/login",
-  },
   providers: [
     ...(process.env.AUTH_GOOGLE_ID && process.env.AUTH_GOOGLE_SECRET
       ? [Google({ clientId: process.env.AUTH_GOOGLE_ID, clientSecret: process.env.AUTH_GOOGLE_SECRET })]
@@ -48,30 +45,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async jwt({ token, user, trigger, session }: any) {
-      const t = token as Record<string, unknown>;
-      if (user) {
-        const u = user as Record<string, unknown>;
-        t.id = u.id as string;
-        t.role = (u.role as string) ?? "user";
-      }
-      if (trigger === "update" && session) {
-        return { ...t, ...session } as Record<string, unknown>;
-      }
-      return t;
-    },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async session({ session, token }: any) {
-      const t = token as Record<string, unknown>;
-      if (session.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const s = session as any;
-        s.user.id = (t.id as string) ?? "";
-        s.user.role = (t.role as string) ?? "user";
-      }
-      return session;
-    },
-  },
 });
