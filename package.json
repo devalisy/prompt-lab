@@ -4,10 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma db push --accept-data-loss && next build",
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx prisma/seed.ts",
+    "seed:admin": "tsx prisma/seed-admin.ts",
+    "check:admin": "tsx prisma/check-admin.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
