@@ -71,12 +71,26 @@ export const usePromptStore = create<PromptStore>()(
             ...state.savedPrompts,
           ],
         }));
+        if (get().user) {
+          fetch("/api/user/saved", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ promptId: prompt.id }),
+          }).catch(() => {});
+        }
       },
 
       removeFromSaved: (id) => {
         set((state) => ({
           savedPrompts: state.savedPrompts.filter((p) => p.id !== id),
         }));
+        if (get().user) {
+          fetch("/api/user/saved", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ promptId: id }),
+          }).catch(() => {});
+        }
       },
 
       isSaved: (id) => {
@@ -100,8 +114,15 @@ export const usePromptStore = create<PromptStore>()(
         try {
           const res = await fetch("/api/user/saved");
           if (res.ok) {
-            const data: SavedPrompt[] = await res.json();
-            set({ savedPrompts: data });
+            const json = await res.json();
+            const list = Array.isArray(json?.data) ? json.data : [];
+            const saved: SavedPrompt[] = list
+              .map((row: { prompt: SavedPrompt & { createdAt: string }; createdAt: string }) => ({
+                ...row.prompt,
+                createdAt: row.prompt.createdAt ?? row.createdAt,
+                savedAt: row.createdAt,
+              }));
+            set({ savedPrompts: saved });
           }
         } catch {
           // Silent fallback to local state

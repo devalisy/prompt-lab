@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -24,6 +24,22 @@ export function Header() {
   const isHome = pathname === "/";
   const isCategory = pathname === "/categories" || categories.some((c) => pathname === `/category/${c.id}`);
   const user = session?.user;
+
+  useEffect(() => {
+    const store = usePromptStore.getState();
+    if (user) {
+      store.setUser({
+        id: (user as { id?: string }).id ?? "",
+        name: user.name ?? "",
+        email: user.email ?? "",
+        image: user.image ?? undefined,
+        role: ((user as { role?: string }).role === "admin" ? "admin" : "user"),
+      });
+      if (user.email) store.syncSavedFromAPI();
+    } else {
+      store.setUser(null);
+    }
+  }, [user?.id, user?.email, user]);
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 flex justify-center pt-3 pointer-events-none">
