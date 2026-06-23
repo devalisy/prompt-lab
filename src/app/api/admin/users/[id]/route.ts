@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { apiResponse, errorResponse, getAuthUser } from "@/lib/api-helpers";
 
 const updateUserSchema = z.object({
-  role: z.enum(["user", "admin"]),
+  role: z.enum(["user", "admin", "privileged"]),
 });
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {

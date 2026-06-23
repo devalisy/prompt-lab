@@ -33,13 +33,14 @@ export async function POST(request: NextRequest) {
     if (!user) return errorResponse("غير مصرح", 401);
 
     const body = await request.json();
-    const { promptId, title, content, tips, categoryId, level } = body as {
+    const { promptId, title, content, tips, categoryId, level, companyId } = body as {
       promptId?: string;
       title?: string;
       content?: string;
       tips?: string[];
       categoryId?: string;
       level?: string;
+      companyId?: string;
     };
 
     if (!promptId) return errorResponse("معرف البرومت مطلوب", 400);
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
           level: level ?? "intermediate",
           isPublic: false,
           authorId: user.id,
+          companyId: companyId ?? null,
         },
       });
       realPromptId = created.id;
@@ -70,8 +72,14 @@ export async function POST(request: NextRequest) {
     });
     if (existing) return errorResponse("البرومت محفوظ مسبقاً", 409);
 
+    // if saving on behalf of a company, check membership and role
+    if (companyId) {
+      const membership = await prisma.companyMember.findUnique({ where: { userId_companyId: { userId: user.id, companyId } } });
+      if (!membership || !["OWNER", "ADMIN"].includes(membership.role)) return errorResponse("غير مصرح بحفظ باسم الشركة", 403);
+    }
+
     const saved = await prisma.savedPrompt.create({
-      data: { userId: user.id, promptId: realPromptId },
+      data: { userId: user.id, promptId: realPromptId, companyId: companyId ?? null },
     });
 
     return apiResponse(saved, 201);

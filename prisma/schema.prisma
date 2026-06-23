@@ -27,6 +27,8 @@ model User {
   skillLikes   SkillLike[]
   savedSkills  SavedSkill[]
   eventLogs    EventLog[]
+  companiesOwned Company[]
+  companyMembers CompanyMember[]
 }
 
 model Account {
@@ -90,11 +92,13 @@ model Prompt {
   isPublic    Boolean  @default(false)
   categoryId  String
   authorId    String?
+  companyId   String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  category    Category      @relation(fields: [categoryId], references: [id])
-  author      User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+   category    Category      @relation(fields: [categoryId], references: [id])
+   author      User?         @relation(fields: [authorId], references: [id], onDelete: SetNull)
+   company     Company?      @relation(fields: [companyId], references: [id])
   savedBy     SavedPrompt[]
   likes       Like[]
   comments    Comment[]
@@ -104,10 +108,12 @@ model SavedPrompt {
   id        String   @id @default(cuid())
   userId    String
   promptId  String
+  companyId String?
   createdAt DateTime @default(now())
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  company Company? @relation(fields: [companyId], references: [id])
 
   @@unique([userId, promptId])
 }
@@ -195,4 +201,39 @@ model EventLog {
 
   @@index([type])
   @@index([createdAt])
+}
+
+enum CompanyRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model Company {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  logo        String?
+  defaults    Json?
+  ownerId     String?
+  createdAt   DateTime       @default(now())
+
+  owner   User?           @relation(fields: [ownerId], references: [id])
+  members CompanyMember[]
+  prompts Prompt[]
+  savedPrompts SavedPrompt[]
+}
+
+model CompanyMember {
+  id        String      @id @default(cuid())
+  userId    String
+  companyId String
+  role      CompanyRole @default(MEMBER)
+  createdAt DateTime    @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
 }

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiResponse, errorResponse } from "@/lib/api-helpers";
+import { prisma } from "@/lib/prisma";
 import { generateWithAI, streamGenerateWithAI } from "@/lib/ai-generator";
 
 const generateSchema = z.object({
@@ -16,9 +17,10 @@ const generateSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const parsed = generateSchema.safeParse(body);
-    if (!parsed.success) return errorResponse(parsed.error.issues[0]?.message ?? "بيانات غير صالحة", 400);
+  const body = await request.json();
+  const parsed = generateSchema.safeParse(body);
+  if (!parsed.success) return errorResponse(parsed.error.issues[0]?.message ?? "بيانات غير صالحة", 400);
+  let options = parsed.data as any;
 
     if (parsed.data.stream) {
       const encoder = new TextEncoder();
@@ -48,7 +50,22 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const result = await generateWithAI(parsed.data);
+    // apply optional company defaults if provided
+    const companyId = (body as any).companyId as string | undefined;
+    if (companyId) {
+      try {
+        const company = await prisma.company.findUnique({ where: { id: companyId } });
+        if (company?.defaults) {
+          // lazy import to avoid circular deps
+          const { applyCompanyDefaults } = await import("@/lib/prompt");
+          options = applyCompanyDefaults(options, company.defaults as any);
+        }
+      } catch (e) {
+        // ignore if company not found
+      }
+    }
+
+    const result = await generateWithAI(options);
     return apiResponse(result);
   } catch (error) {
     return errorResponse(error instanceof Error ? error.message : "فشل توليد البرومت", 500);
