@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/Input";
+import { Input, Textarea } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
 type Company = {
@@ -11,12 +11,13 @@ type Company = {
   description?: string;
   logo?: string;
   defaults?: Record<string, any>;
+  systemPrompt?: string;
 };
 
 export default function ProfilePage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", slug: "", description: "", logo: "", tone: "", audience: "", language: "" });
+  const [form, setForm] = useState({ name: "", slug: "", description: "", logo: "", tone: "", audience: "", language: "", systemPrompt: "" });
 
   useEffect(() => {
     fetchCompanies();
@@ -33,10 +34,10 @@ export default function ProfilePage() {
     setLoading(true);
     try {
       const defaults = { tone: form.tone || undefined, audience: form.audience || undefined, language: form.language || undefined };
-      const res = await fetch('/api/user/company', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name, slug: form.slug, description: form.description, logo: form.logo, defaults }) });
+      const res = await fetch('/api/user/company', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: form.name, slug: form.slug, description: form.description, logo: form.logo, defaults, systemPrompt: form.systemPrompt || undefined }) });
       const json = await res.json();
       if (json?.success) {
-        setForm({ name: "", slug: "", description: "", logo: "", tone: "", audience: "", language: "" });
+        setForm({ name: "", slug: "", description: "", logo: "", tone: "", audience: "", language: "", systemPrompt: "" });
         fetchCompanies();
       } else {
         alert(json?.error ?? 'فشل إنشاء الشركة');
@@ -57,12 +58,15 @@ export default function ProfilePage() {
         ) : (
           <ul className="space-y-3">
             {companies.map((c) => (
-              <li key={c.id} className="p-3 border border-border rounded-xl flex items-center gap-3">
-                <div className="flex-1">
-                  <div className="font-medium">{c.name}</div>
-                  <div className="text-xs text-text-muted">{c.description}</div>
+              <li key={c.id} className="p-3 border border-border rounded-xl flex flex-col gap-1">
+                <div className="flex items-center gap-3">
+                  <div className="flex-1">
+                    <div className="font-medium">{c.name}</div>
+                    <div className="text-xs text-text-muted">{c.description}</div>
+                  </div>
+                  <div className="text-xs text-text-muted">{c.slug}</div>
                 </div>
-                <div className="text-xs text-text-muted">{c.slug}</div>
+                {c.systemPrompt && <div className="text-[10px] text-text-muted bg-surface-elevated p-2 rounded-lg mt-1 line-clamp-2">{c.systemPrompt}</div>}
               </li>
             ))}
           </ul>
@@ -76,6 +80,8 @@ export default function ProfilePage() {
           <Input id="c_slug" name="c_slug" label="slug (اختياري)" value={form.slug} onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))} />
           <Input id="c_desc" name="c_desc" label="وصف" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
           <Input id="c_logo" name="c_logo" label="رابط الشعار" value={form.logo} onChange={(e) => setForm((f) => ({ ...f, logo: e.target.value }))} />
+
+          <Textarea id="c_systemPrompt" name="c_systemPrompt" label="برومبت الشركة (system prompt)" placeholder="مثال: تحدث بصفتك مساعد شركة أكاديمية البرمجة. التزم بالنبرة التعليمية." value={form.systemPrompt} onChange={(e) => setForm((f) => ({ ...f, systemPrompt: e.target.value }))} rows={3} />
 
           <div className="grid grid-cols-3 gap-3">
             <Input id="c_tone" name="c_tone" label="tone (مثال: رسمي)" value={form.tone} onChange={(e) => setForm((f) => ({ ...f, tone: e.target.value }))} />

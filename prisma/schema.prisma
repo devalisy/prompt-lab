@@ -213,11 +213,12 @@ model Company {
   id          String         @id @default(cuid())
   name        String
   slug        String         @unique
-  description String?
-  logo        String?
-  defaults    Json?
-  ownerId     String?
-  createdAt   DateTime       @default(now())
+  description  String?
+  logo         String?
+  defaults     Json?
+  systemPrompt String?
+  ownerId      String?
+  createdAt    DateTime       @default(now())
 
   owner   User?           @relation(fields: [ownerId], references: [id])
   members CompanyMember[]

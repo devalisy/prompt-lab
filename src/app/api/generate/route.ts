@@ -50,15 +50,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // apply optional company defaults if provided
+    // apply optional company defaults and systemPrompt if provided
     const companyId = (body as any).companyId as string | undefined;
     if (companyId) {
       try {
         const company = await prisma.company.findUnique({ where: { id: companyId } });
-        if (company?.defaults) {
-          // lazy import to avoid circular deps
-          const { applyCompanyDefaults } = await import("@/lib/prompt");
-          options = applyCompanyDefaults(options, company.defaults as any);
+        if (company) {
+          if (company.defaults) {
+            const { applyCompanyDefaults } = await import("@/lib/prompt");
+            options = applyCompanyDefaults(options, company.defaults as any);
+          }
+          if (company.systemPrompt) {
+            options.companySystemPrompt = company.systemPrompt;
+          }
         }
       } catch (e) {
         // ignore if company not found

@@ -28,12 +28,13 @@ export async function POST(request: NextRequest) {
     if (!["admin", "privileged"].includes(user.role)) return errorResponse("غير مصرح", 403);
 
     const body = await request.json();
-    const { name, slug, description, logo, defaults } = body as {
+    const { name, slug, description, logo, defaults, systemPrompt } = body as {
       name: string;
       slug?: string;
       description?: string;
       logo?: string;
       defaults?: Record<string, any>;
+      systemPrompt?: string;
     };
 
     if (!name) return errorResponse("اسم الشركة مطلوب", 400);
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
         description,
         logo,
         defaults: defaults ?? {},
+        systemPrompt: systemPrompt ?? null,
         ownerId: user.id,
         members: {
           create: [{ userId: user.id, role: "OWNER" }],
@@ -64,12 +66,13 @@ export async function PUT(request: NextRequest) {
     if (!user) return errorResponse("غير مصرح", 401);
 
     const body = await request.json();
-    const { id, name, description, logo, defaults } = body as {
+    const { id, name, description, logo, defaults, systemPrompt } = body as {
       id: string;
       name?: string;
       description?: string;
       logo?: string;
       defaults?: Record<string, any>;
+      systemPrompt?: string;
     };
 
     if (!id) return errorResponse("معرف الشركة مطلوب", 400);
@@ -79,7 +82,7 @@ export async function PUT(request: NextRequest) {
 
     const updated = await prisma.company.update({
       where: { id },
-      data: { name, description, logo, defaults },
+      data: { name, description, logo, defaults, systemPrompt },
     });
 
     return apiResponse(updated);

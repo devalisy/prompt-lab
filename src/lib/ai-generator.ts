@@ -11,6 +11,7 @@ export interface GenerateOptions {
   style: "short" | "detailed" | "creative";
   tone?: string;
   audience?: string;
+  companySystemPrompt?: string;
 }
 
 export interface GeneratedPrompt {
@@ -271,8 +272,12 @@ export async function* streamGenerateWithAI(options: GenerateOptions): AsyncGene
 async function generateViaOpenRouter(options: GenerateOptions): Promise<GeneratedPrompt | null> {
   try {
     const userPrompt = buildUserPrompt(options);
-    console.log("[AI-Gen] Calling TokenRouter with:", { systemPrompt: SYSTEM_PROMPT.slice(0, 50), userPrompt: userPrompt.slice(0, 100) });
-    const raw = await generateWithTokenRouter(SYSTEM_PROMPT, userPrompt);
+    let systemPrompt = SYSTEM_PROMPT;
+    if (options.companySystemPrompt) {
+      systemPrompt = options.companySystemPrompt + "\n\n" + systemPrompt;
+    }
+    console.log("[AI-Gen] Calling TokenRouter with:", { systemPrompt: systemPrompt.slice(0, 50), userPrompt: userPrompt.slice(0, 100) });
+    const raw = await generateWithTokenRouter(systemPrompt, userPrompt);
     console.log("[AI-Gen] TokenRouter raw response:", raw?.slice(0, 300));
     if (!raw) {
       console.error("[AI-Gen] TokenRouter returned null (API key missing or request failed)");
