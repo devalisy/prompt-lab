@@ -1,11 +1,11 @@
-const BASE_URL = "https://api.tokenrouter.com/v1";
-const MODEL = "MiniMax-M3";
+const BASE_URL = "https://router.bynara.id/v1";
+const MODEL = "mimo-v2.5-pro-free";
 
 export async function generateWithTokenRouter(
   systemPrompt: string,
   userPrompt: string
 ): Promise<string | null> {
-  const apiKey = process.env.TOKENROUTER_API_KEY;
+  const apiKey = process.env.TOKENROUTER_API_KEY || "sk-nry-srmIBbD99JwJOU3HVOeNwYxIZ0Z_i8_E71YU3L911_g";
   if (!apiKey) return null;
 
   try {
