@@ -1,30 +1,28 @@
-import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import { authConfig } from "@/lib/auth.config";
+import type { NextRequest } from "next/server";
 
-const { auth } = NextAuth(authConfig);
+const protectedPaths = ["/dashboard", "/admin", "/community", "/skills", "/categories", "/category", "/saved", "/profile"];
 
-export default auth((req) => {
-  const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
-  const isDashboard = nextUrl.pathname.startsWith("/dashboard");
-  const isAdmin = nextUrl.pathname.startsWith("/admin");
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-  if (isDashboard && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", nextUrl));
+  if (pathname === "/" || pathname === "/login" || pathname === "/register") {
+    return NextResponse.next();
   }
 
-  if (isAdmin && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", nextUrl));
-  }
+  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + "/"));
+  if (!isProtected) return NextResponse.next();
 
-  if (isAdmin && req.auth?.user?.role !== "admin") {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  const token = request.cookies.get("authjs.session-token")?.value
+    || request.cookies.get("__Secure-authjs.session-token")?.value;
+
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/community/:path*", "/skills/:path*", "/categories/:path*", "/category/:path*", "/saved/:path*", "/profile/:path*"],
 };
