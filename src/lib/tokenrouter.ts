@@ -1,49 +1,43 @@
-const BASE_URL = "https://router.bynara.id/v1";
-const MODEL = "mimo-v2.5-pro-free";
+import { prisma } from "@/lib/prisma";
+import { generateWithProvider } from "@/lib/providers";
 
 export async function generateWithTokenRouter(
   systemPrompt: string,
   userPrompt: string
 ): Promise<string | null> {
-  const apiKey = process.env.TOKENROUTER_API_KEY || "sk-nry-srmIBbD99JwJOU3HVOeNwYxIZ0Z_i8_E71YU3L911_g";
-  if (!apiKey) return null;
-
   try {
-    const res = await fetch(`${BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-      signal: AbortSignal.timeout ? AbortSignal.timeout(55000) : (() => { const c = new AbortController(); setTimeout(() => c.abort(), 55000); return c.signal; })(),
-    });
-
-    if (!res.ok) {
-      console.error(`TokenRouter API error: ${res.status} ${res.statusText}`);
+    const providerRecord = await prisma.aiProvider.findFirst({ where: { isActive: true } });
+    if (!providerRecord) {
+      console.error("[TokenRouter] No active provider found in DB");
       return null;
     }
 
-    const json = (await res.json()) as {
-      choices: { message: { content: string } }[];
-    };
+    const signal = AbortSignal.timeout
+      ? AbortSignal.timeout(55000)
+      : (() => {
+          const c = new AbortController();
+          setTimeout(() => c.abort(), 55000);
+          return c.signal;
+        })();
 
-    let content = json.choices[0]?.message?.content ?? null;
-    if (content) {
-      content = content.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-    }
+    const result = await generateWithProvider(
+      {
+        id: providerRecord.id,
+        name: providerRecord.name,
+        label: providerRecord.label,
+        baseUrl: providerRecord.baseUrl,
+        apiKey: providerRecord.apiKey,
+        model: providerRecord.model,
+        isActive: true,
+      },
+      systemPrompt,
+      userPrompt,
+      signal,
+    );
 
-    return content;
+    return result?.content ?? null;
   } catch (err) {
-    console.error("TokenRouter fetch failed:", err);
+    console.error("[TokenRouter] Failed:", err);
     return null;
   }
 }

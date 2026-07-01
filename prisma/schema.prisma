@@ -218,6 +218,18 @@ model AdminNote {
   @@index([targetType, targetId])
 }
 
+model AiProvider {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  label     String
+  baseUrl   String
+  apiKey    String
+  model     String
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 enum CompanyRole {
   OWNER
   ADMIN

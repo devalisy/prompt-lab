@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { Gear } from "@phosphor-icons/react";
 import { motion, AnimatePresence } from "motion/react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/Button";
@@ -13,7 +14,7 @@ import AdminNotes from "@/components/admin/AdminNotes";
 import {
   Users, Quotes, Tag, Trash, Pencil, Shield, ArrowLeft, Plus,
   MagnifyingGlass, CaretLeft, CaretRight, Eye, EyeSlash,
-  ChartBar, Stack, UserCircle, ClockCounterClockwise
+  ChartBar, Stack, UserCircle, ClockCounterClockwise, GearSix
 } from "@phosphor-icons/react";
 
 interface AdminStats {
@@ -211,6 +212,9 @@ export default function AdminPage() {
               {t.icon}{t.label}
             </button>
           ))}
+          <Link href="/admin/settings" className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-medium text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-all mr-auto whitespace-nowrap">
+            <GearSix weight="bold" className="size-3.5" />الإعدادات
+          </Link>
         </div>
 
         {loading ? (
