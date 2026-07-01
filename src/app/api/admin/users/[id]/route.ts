@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { apiResponse, errorResponse, getAuthUser } from "@/lib/api-helpers";
 
 const updateUserSchema = z.object({
-  role: z.enum(["user", "admin", "privileged"]),
+  role: z.enum(["user", "admin", "privileged"]).optional(),
+  dailyGenLimit: z.number().int().min(1).max(1000).optional(),
 });
 
 export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -31,12 +32,16 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.json();
 
     const parsed = updateUserSchema.safeParse(body);
-    if (!parsed.success) return errorResponse("قيمة الدور غير صالحة", 400);
+    if (!parsed.success) return errorResponse("بيانات غير صالحة", 400);
+
+    const data: Record<string, unknown> = {};
+    if (parsed.data.role !== undefined) data.role = parsed.data.role;
+    if (parsed.data.dailyGenLimit !== undefined) data.dailyGenLimit = parsed.data.dailyGenLimit;
 
     const updated = await prisma.user.update({
       where: { id },
-      data: { role: parsed.data.role },
-      select: { id: true, name: true, email: true, role: true, image: true, createdAt: true },
+      data,
+      select: { id: true, name: true, email: true, role: true, dailyGenLimit: true, dailyGenCount: true, dailyGenDate: true, image: true, createdAt: true },
     });
 
     return apiResponse(updated);

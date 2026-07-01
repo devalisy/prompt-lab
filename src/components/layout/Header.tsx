@@ -188,6 +188,14 @@ export function Header() {
                           <p className="text-xs font-medium text-text-primary truncate">{user.name}</p>
                           <p className="text-[10px] text-text-muted truncate">{user.email}</p>
                         </div>
+                        {user.role !== "admin" && (
+                          <div className="px-3 py-2 border-b border-border-light bg-accent/5">
+                            <p className="text-[10px] text-text-muted">التوليدات المتبقية اليوم</p>
+                            <p className="text-xs font-bold text-accent mt-0.5">
+                              {Math.max(0, (user as any).dailyGenLimit - (user as any).dailyGenCount)} / {(user as any).dailyGenLimit}
+                            </p>
+                          </div>
+                        )}
                         <Link
                           href="/dashboard"
                           onClick={() => setUserMenuOpen(false)}
@@ -351,6 +359,14 @@ export function Header() {
                       <p className="text-xs font-medium text-text-primary truncate">{user.name}</p>
                       <p className="text-[10px] text-text-muted truncate">{user.email}</p>
                     </div>
+                    {user.role !== "admin" && (
+                      <div className="px-3 py-2 mx-2 rounded-xl bg-accent/5 border border-border-light">
+                        <p className="text-[10px] text-text-muted">التوليدات المتبقية اليوم</p>
+                        <p className="text-xs font-bold text-accent mt-0.5">
+                          {Math.max(0, (user as any).dailyGenLimit - (user as any).dailyGenCount)} / {(user as any).dailyGenLimit}
+                        </p>
+                      </div>
+                    )}
                     <Link
                       href="/dashboard"
                       onClick={() => setMobileOpen(false)}

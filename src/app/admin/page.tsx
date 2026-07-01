@@ -26,6 +26,7 @@ interface AdminStats {
 
 interface AdminUser {
   id: string; name: string | null; email: string; role: string; image: string | null;
+  dailyGenLimit: number; dailyGenCount: number; dailyGenDate: string | null;
   createdAt: string; _count: { prompts: number; likes: number; comments: number };
 }
 
@@ -122,6 +123,10 @@ export default function AdminPage() {
     const newRole = role === "admin" ? "user" : "admin";
     if (!confirm(`تغيير صلاحية المستخدم إلى ${newRole === "admin" ? "مشرف" : "مستخدم"}؟`)) return;
     try { const r = await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: newRole }) }); if (r.ok) { showToast("تم التغيير"); fetchUsers(page, search); } else { const d = await r.json(); showToast(d.error || "فشل", "error"); } } catch { showToast("خطأ", "error"); }
+  };
+
+  const handleUpdateLimit = async (id: string, limit: number) => {
+    try { const r = await fetch(`/api/admin/users/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ dailyGenLimit: limit }) }); if (r.ok) { showToast("تم التحديث"); fetchUsers(page, search); } else { const d = await r.json(); showToast(d.error || "فشل", "error"); } } catch { showToast("خطأ", "error"); }
   };
 
   const handleDeletePrompt = async (id: string, title: string) => {
@@ -300,6 +305,7 @@ export default function AdminPage() {
                         <th className="text-right px-4 py-3 font-medium hidden sm:table-cell">البريد</th>
                         <th className="text-right px-4 py-3 font-medium">الدور</th>
                         <th className="text-right px-4 py-3 font-medium hidden md:table-cell">البرومتات</th>
+                        <th className="text-right px-4 py-3 font-medium hidden lg:table-cell">الحد اليومي</th>
                         <th className="text-right px-4 py-3 font-medium hidden lg:table-cell">التسجيل</th>
                         <th className="text-left px-4 py-3 font-medium">إجراءات</th>
                       </tr></thead>
@@ -317,6 +323,20 @@ export default function AdminPage() {
                               </button>
                             </td>
                             <td className="px-4 py-3 text-text-secondary hidden md:table-cell">{u._count.prompts}</td>
+                            <td className="px-4 py-3 text-text-secondary hidden lg:table-cell">
+                              <div className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={1000}
+                                  defaultValue={u.dailyGenLimit}
+                                  onBlur={e => { const v = parseInt(e.target.value); if (!isNaN(v) && v !== u.dailyGenLimit) handleUpdateLimit(u.id, v); }}
+                                  onKeyDown={e => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                                  className="w-16 h-7 px-1.5 rounded-md bg-surface-elevated border border-border text-xs text-center text-text-primary focus:outline-none focus:border-accent/50"
+                                />
+                                <span className="text-[10px] text-text-muted">/ {u.dailyGenCount} اليوم</span>
+                              </div>
+                            </td>
                             <td className="px-4 py-3 text-text-secondary hidden lg:table-cell">{new Date(u.createdAt).toLocaleDateString("ar-SA")}</td>
                             <td className="px-4 py-3 text-left">
                               <div className="flex items-center justify-end gap-1">

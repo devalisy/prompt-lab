@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiResponse, errorResponse } from "@/lib/api-helpers";
+import { apiResponse, errorResponse, getAuthUser } from "@/lib/api-helpers";
 import { prisma } from "@/lib/prisma";
 import { generateWithAI, streamGenerateWithAI } from "@/lib/ai-generator";
 
@@ -17,10 +17,30 @@ const generateSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
-  const body = await request.json();
-  const parsed = generateSchema.safeParse(body);
-  if (!parsed.success) return errorResponse(parsed.error.issues[0]?.message ?? "بيانات غير صالحة", 400);
-  let options = parsed.data as any;
+    const user = await getAuthUser();
+    if (!user) return errorResponse("غير مصرح", 401);
+
+    // daily generation limit check (admins bypass)
+    if (user.role !== "admin") {
+      const today = new Date().toISOString().slice(0, 10);
+      const fullUser = await prisma.user.findUnique({ where: { id: user.id } });
+      if (fullUser) {
+        if (fullUser.dailyGenDate !== today) {
+          // reset daily counter
+          await prisma.user.update({ where: { id: user.id }, data: { dailyGenCount: 0, dailyGenDate: today } });
+          fullUser.dailyGenCount = 0;
+          fullUser.dailyGenDate = today;
+        }
+        if (fullUser.dailyGenCount >= fullUser.dailyGenLimit) {
+          return errorResponse(`تجاوزت الحد اليومي المسموح (${fullUser.dailyGenLimit} توليدات). جددّ حدّك غداً.`, 429);
+        }
+      }
+    }
+
+    const body = await request.json();
+    const parsed = generateSchema.safeParse(body);
+    if (!parsed.success) return errorResponse(parsed.error.issues[0]?.message ?? "بيانات غير صالحة", 400);
+    let options = parsed.data as any;
 
     if (parsed.data.stream) {
       const encoder = new TextEncoder();
@@ -70,6 +90,15 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await generateWithAI(options);
+
+    // increment daily counter (if not admin)
+    if (user.role !== "admin") {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { dailyGenCount: { increment: 1 } },
+      });
+    }
+
     return apiResponse(result);
   } catch (error) {
     return errorResponse(error instanceof Error ? error.message : "فشل توليد البرومت", 500);

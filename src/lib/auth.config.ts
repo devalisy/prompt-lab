@@ -14,6 +14,29 @@ export const authConfig = {
       if (user) {
         token.id = user.id ?? "";
         token.role = user.role ?? "user";
+        token.dailyGenLimit = user.dailyGenLimit ?? 5;
+        token.dailyGenCount = user.dailyGenCount ?? 0;
+        token.dailyGenDate = user.dailyGenDate ?? null;
+      } else {
+        // refresh daily count from DB on each JWT refresh
+        try {
+          const { prisma } = await import("@/lib/prisma");
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            select: { dailyGenLimit: true, dailyGenCount: true, dailyGenDate: true },
+          });
+          if (dbUser) {
+            token.dailyGenLimit = dbUser.dailyGenLimit;
+            const today = new Date().toISOString().slice(0, 10);
+            if (dbUser.dailyGenDate !== today) {
+              token.dailyGenCount = 0;
+            } else {
+              token.dailyGenCount = dbUser.dailyGenCount;
+            }
+          }
+        } catch {
+          // keep existing token values
+        }
       }
       return token;
     },
@@ -22,6 +45,8 @@ export const authConfig = {
       if (session.user) {
         session.user.id = token.id ?? "";
         session.user.role = token.role ?? "user";
+        session.user.dailyGenLimit = token.dailyGenLimit ?? 5;
+        session.user.dailyGenCount = token.dailyGenCount ?? 0;
       }
       return session;
     },
