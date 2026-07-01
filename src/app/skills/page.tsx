@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { SkillCard } from "@/components/skill/SkillCard";
 import { PromptDetailModal } from "@/components/prompt/PromptDetailModal";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/Toast";
 import { Lightning, Plus, MagnifyingGlass, Users, Fire, Clock } from "@phosphor-icons/react";
 
 interface SkillData {
@@ -52,6 +53,21 @@ export default function SkillsPage() {
     };
     fetchData();
   }, [tab]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/skills/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setSkills((prev) => prev.filter((s) => s.id !== id));
+        showToast("تم حذف المهارة");
+      } else {
+        const d = await res.json();
+        showToast(d.error || "فشل الحذف", "error");
+      }
+    } catch {
+      showToast("خطأ في الاتصال", "error");
+    }
+  }, []);
 
   const handleLike = (id: string) => {
     setLiked((prev) => {
@@ -143,6 +159,7 @@ export default function SkillsPage() {
                 onLike={handleLike}
                 isLiked={liked.has(skill.id)}
                 onView={(s) => setViewingSkill(s)}
+                onDelete={handleDelete}
               />
             ))}
           </div>

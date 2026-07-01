@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Copy, Check, Heart, HeartBreak, ThumbsUp, Lightning } from "@phosphor-icons/react";
+import { Copy, Check, Heart, HeartBreak, ThumbsUp, Lightning, Trash } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { useClipboard } from "@/hooks/useClipboard";
 import { showToast } from "@/components/ui/Toast";
@@ -22,15 +23,17 @@ interface SkillCardData {
 }
 
 interface SkillCardProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   skill: any;
   index?: number;
   onLike?: (id: string) => void;
   isLiked?: boolean;
   onView?: (skill: any) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function SkillCard({ skill, index = 0, onLike, isLiked, onView }: SkillCardProps) {
+export function SkillCard({ skill, index = 0, onLike, isLiked, onView, onDelete }: SkillCardProps) {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
   const { copy, copied } = useClipboard();
   const tags: string[] = typeof skill.tags === "string" ? JSON.parse(skill.tags) : skill.tags ?? [];
   const likeCount = skill.likes ?? skill._count?.likes ?? 0;
@@ -38,6 +41,11 @@ export function SkillCard({ skill, index = 0, onLike, isLiked, onView }: SkillCa
   const handleCopy = async () => {
     await copy(skill.systemPrompt);
     showToast("تم نسخ التعليمات!");
+  };
+
+  const handleDelete = () => {
+    if (!confirm("حذف هذه المهارة؟")) return;
+    onDelete?.(skill.id);
   };
 
   return (
@@ -98,16 +106,27 @@ export function SkillCard({ skill, index = 0, onLike, isLiked, onView }: SkillCa
               </button>
             )}
           </div>
-          <button
-            onClick={handleCopy}
-            className={cn(
-              "text-[11px] font-medium transition-colors",
-              copied ? "text-accent" : "text-text-muted hover:text-text-primary"
+          <div className="flex items-center gap-1">
+            {isAdmin && onDelete && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1 text-[11px] text-text-muted hover:text-danger transition-colors"
+              >
+                <Trash weight="bold" className="size-3" />
+                حذف
+              </button>
             )}
-          >
-            {copied ? <Check weight="bold" className="size-3" /> : <Copy weight="bold" className="size-3" />}
-            {copied ? "تم" : "نسخ التعليمات"}
-          </button>
+            <button
+              onClick={handleCopy}
+              className={cn(
+                "text-[11px] font-medium transition-colors",
+                copied ? "text-accent" : "text-text-muted hover:text-text-primary"
+              )}
+            >
+              {copied ? <Check weight="bold" className="size-3" /> : <Copy weight="bold" className="size-3" />}
+              {copied ? "تم" : "نسخ التعليمات"}
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

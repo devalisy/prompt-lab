@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Copy, Check, Heart, HeartBreak, ThumbsUp } from "@phosphor-icons/react";
+import { Copy, Check, Heart, HeartBreak, ThumbsUp, Trash } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import CompanySaveButton from "@/components/prompt/CompanySaveButton";
 
@@ -24,15 +25,17 @@ interface PromptCardData {
 }
 
 interface PromptCardProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   prompt: any;
   index?: number;
   onLike?: (id: string) => void;
   isLiked?: boolean;
   onView?: (prompt: any) => void;
+  onDelete?: (id: string) => void;
 }
 
-export function PromptCard({ prompt, index = 0, onLike, isLiked, onView }: PromptCardProps) {
+export function PromptCard({ prompt, index = 0, onLike, isLiked, onView, onDelete }: PromptCardProps) {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
   const tags: string[] = typeof prompt.tags === "string" ? JSON.parse(prompt.tags) : prompt.tags;
   const { copy, copied } = useClipboard();
   const { addToSaved, removeFromSaved, isSaved } = usePromptStore();
@@ -62,6 +65,11 @@ export function PromptCard({ prompt, index = 0, onLike, isLiked, onView }: Promp
       setSaved(true);
       showToast("تم الحفظ!");
     }
+  };
+
+  const handleDelete = () => {
+    if (!confirm("حذف هذا البرومت؟")) return;
+    onDelete?.(prompt.id);
   };
 
   return (
@@ -127,16 +135,27 @@ export function PromptCard({ prompt, index = 0, onLike, isLiked, onView }: Promp
               </button>
             )}
           </div>
-          <button
-            onClick={handleCopy}
-            className={cn(
-              "text-[11px] font-medium transition-colors",
-              copied ? "text-accent" : "text-text-muted hover:text-text-primary"
+          <div className="flex items-center gap-1">
+            {isAdmin && onDelete && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1 text-[11px] text-text-muted hover:text-danger transition-colors"
+              >
+                <Trash weight="bold" className="size-3" />
+                حذف
+              </button>
             )}
-          >
-            {copied ? <Check weight="bold" className="size-3" /> : <Copy weight="bold" className="size-3" />}
-            {copied ? "تم" : "نسخ"}
-          </button>
+            <button
+              onClick={handleCopy}
+              className={cn(
+                "text-[11px] font-medium transition-colors",
+                copied ? "text-accent" : "text-text-muted hover:text-text-primary"
+              )}
+            >
+              {copied ? <Check weight="bold" className="size-3" /> : <Copy weight="bold" className="size-3" />}
+              {copied ? "تم" : "نسخ"}
+            </button>
+          </div>
         </div>
       </div>
     </motion.div>

@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, Copy, Check, ShareNetwork, DownloadSimple, HeartBreak, BookmarkSimple, CloudArrowUp } from "@phosphor-icons/react";
+import { X, Copy, Check, ShareNetwork, DownloadSimple, HeartBreak, BookmarkSimple, CloudArrowUp, Trash } from "@phosphor-icons/react";
 import { PromptResult } from "./PromptResult";
 import { cn } from "@/lib/utils";
 import CompanySaveButton from "@/components/prompt/CompanySaveButton";
@@ -29,6 +30,8 @@ interface PromptDetailModalProps {
 }
 
 export function PromptDetailModal({ prompt, onClose }: PromptDetailModalProps) {
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
   const { copy, copied } = useClipboard();
   const { addToSaved, removeFromSaved, isSaved, user } = usePromptStore();
 
@@ -86,6 +89,22 @@ export function PromptDetailModal({ prompt, onClose }: PromptDetailModalProps) {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast("تم التحميل!");
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("حذف هذا البرومت نهائياً؟")) return;
+    try {
+      const res = await fetch(`/api/admin/prompts/${data.id}`, { method: "DELETE" });
+      if (res.ok) {
+        showToast("تم الحذف");
+        onClose();
+      } else {
+        const d = await res.json();
+        showToast(d.error || "فشل الحذف", "error");
+      }
+    } catch {
+      showToast("خطأ في الاتصال", "error");
+    }
   };
 
   const handlePublish = async () => {
@@ -204,6 +223,16 @@ export function PromptDetailModal({ prompt, onClose }: PromptDetailModalProps) {
               <DownloadSimple weight="bold" className="size-3.5" />
               .md تحميل
             </button>
+
+            {isAdmin && (
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-danger hover:bg-danger/10 transition-all"
+              >
+                <Trash weight="bold" className="size-3.5" />
+                حذف
+              </button>
+            )}
 
             {user && !published && !data.author && (
               <button

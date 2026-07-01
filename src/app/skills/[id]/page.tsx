@@ -2,7 +2,9 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -11,7 +13,7 @@ import { useClipboard } from "@/hooks/useClipboard";
 import { usePromptStore } from "@/store/promptStore";
 import { cn } from "@/lib/utils";
 import AdminNotes from "@/components/admin/AdminNotes";
-import { ArrowRight, Copy, Check, Lightning, Share, BookmarkSimple, HeartBreak, Sparkle, FloppyDisk } from "@phosphor-icons/react";
+import { ArrowRight, Copy, Check, Lightning, Share, BookmarkSimple, HeartBreak, Sparkle, FloppyDisk, Trash } from "@phosphor-icons/react";
 
 interface SkillDetail {
   id: string;
@@ -34,6 +36,9 @@ interface Props {
 
 export default function SkillDetailPage({ params }: Props) {
   const { id } = use(params);
+  const router = useRouter();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
   const { copy, copied } = useClipboard();
   const { addToSaved, removeFromSaved, isSaved, user } = usePromptStore();
 
@@ -112,6 +117,22 @@ export default function SkillDetailPage({ params }: Props) {
     } else {
       await copy(window.location.href);
       showToast("تم نسخ الرابط!");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("حذف هذه المهارة نهائياً؟")) return;
+    try {
+      const res = await fetch(`/api/skills/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        showToast("تم حذف المهارة");
+        router.push("/skills");
+      } else {
+        const d = await res.json();
+        showToast(d.error || "فشل الحذف", "error");
+      }
+    } catch {
+      showToast("خطأ في الاتصال", "error");
     }
   };
 
@@ -201,6 +222,11 @@ export default function SkillDetailPage({ params }: Props) {
                   {variables.length > 0 && (
                     <Button size="sm" onClick={handleUse} icon={<Sparkle weight="fill" className="size-3.5" />}>
                       استخدم المهارة
+                    </Button>
+                  )}
+                  {isAdmin && (
+                    <Button size="sm" variant="secondary" onClick={handleDelete} icon={<Trash weight="bold" className="size-3.5" />} className="text-danger hover:bg-danger/10">
+                      حذف
                     </Button>
                   )}
                 </div>

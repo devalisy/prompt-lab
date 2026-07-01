@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { motion } from "motion/react";
 import { PromptCard } from "@/components/prompt/PromptCard";
 import { PromptDetailModal } from "@/components/prompt/PromptDetailModal";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/Toast";
 import { Users, Fire, Clock, MagnifyingGlass } from "@phosphor-icons/react";
 
 interface CommunityPrompt {
@@ -28,6 +30,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 ];
 
 export default function CommunityPage() {
+  const { data: session } = useSession();
   const [tab, setTab] = useState<Tab>("all");
   const [prompts, setPrompts] = useState<CommunityPrompt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +58,21 @@ export default function CommunityPage() {
     };
     fetchData().finally(() => setLoading(false));
   }, [tab]);
+
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/prompts/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setPrompts((prev) => prev.filter((p) => p.id !== id));
+        showToast("تم حذف البرومت");
+      } else {
+        const d = await res.json();
+        showToast(d.error || "فشل الحذف", "error");
+      }
+    } catch {
+      showToast("خطأ في الاتصال", "error");
+    }
+  }, []);
 
   const handleLike = (id: string) => {
     setLiked((prev) => {
@@ -140,6 +158,7 @@ export default function CommunityPage() {
                 onLike={handleLike}
                 isLiked={liked.has(prompt.id)}
                 onView={(p) => setViewingPrompt(p)}
+                onDelete={handleDelete}
               />
             ))}
           </div>
