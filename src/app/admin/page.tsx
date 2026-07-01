@@ -326,7 +326,7 @@ export default function AdminPage() {
                             <td className="px-4 py-3 text-text-secondary hidden lg:table-cell">
                               <div className="flex items-center gap-1">
                                 <select
-                                  defaultValue={u.dailyGenLimit}
+                                  value={u.dailyGenLimit}
                                   onChange={e => handleUpdateLimit(u.id, parseInt(e.target.value))}
                                   className="w-14 h-7 px-1 rounded-md bg-surface-elevated border border-border text-xs text-center text-text-primary focus:outline-none focus:border-accent/50 cursor-pointer"
                                 >
@@ -346,7 +346,7 @@ export default function AdminPage() {
                             </td>
                           </tr>
                         ))}
-                        {users.length === 0 && <tr><td colSpan={6} className="text-center py-10 text-text-muted">لا يوجد مستخدمين</td></tr>}
+                        {users.length === 0 && <tr><td colSpan={7} className="text-center py-10 text-text-muted">لا يوجد مستخدمين</td></tr>}
                       </tbody>
                     </table>
                   </div>
