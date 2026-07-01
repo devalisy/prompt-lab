@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { ToastContainer } from "@/components/ui/Toast";
 import { SessionProvider } from "@/components/providers/SessionProvider";
+import { AuthGuard } from "@/components/auth/AuthGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -79,7 +80,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <SessionProvider>
           <Header />
-          <main className="flex-1">{children}</main>
+          <main className="flex-1"><AuthGuard>{children}</AuthGuard></main>
           <Footer />
           <ToastContainer />
         </SessionProvider>

@@ -1,31 +1,30 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { authConfig } from "@/lib/auth.config";
 
-const protectedPaths = ["/dashboard", "/admin", "/community", "/skills", "/categories", "/category", "/saved", "/profile"];
+const { auth } = NextAuth(authConfig);
 
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export default auth((req) => {
+  const { nextUrl } = req;
+  const isLoggedIn = !!req.auth;
+  const isDashboard = nextUrl.pathname.startsWith("/dashboard");
+  const isAdmin = nextUrl.pathname.startsWith("/admin");
 
-  if (pathname === "/" || pathname === "/login" || pathname === "/register") {
-    return NextResponse.next();
+  if (isDashboard && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
-  const isProtected = protectedPaths.some(p => pathname === p || pathname.startsWith(p + "/"));
-  if (!isProtected) return NextResponse.next();
-
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  if (isAdmin && !isLoggedIn) {
+    return NextResponse.redirect(new URL("/login", nextUrl));
   }
 
-  if (pathname.startsWith("/admin") && token.role !== "admin") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (isAdmin && req.auth?.user?.role !== "admin") {
+    return NextResponse.redirect(new URL("/dashboard", nextUrl));
   }
 
   return NextResponse.next();
-}
+});
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*", "/community/:path*", "/skills/:path*", "/categories/:path*", "/category/:path*", "/saved/:path*", "/profile/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*"],
 };
