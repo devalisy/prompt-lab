@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +10,6 @@ import { signIn } from "next-auth/react";
 import { Eye, EyeSlash, GoogleLogo, Quotes } from "@phosphor-icons/react";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const rawCallback = searchParams.get("callbackUrl") || "/dashboard";
   const callbackUrl = rawCallback.startsWith("/") ? rawCallback : "/dashboard";
@@ -38,18 +37,14 @@ function LoginForm() {
           return;
         }
 
-        if (result?.ok) {
-          await fetch("/api/auth/session").catch(() => {});
-          router.replace(callbackUrl);
-          router.refresh();
-        }
+        window.location.href = callbackUrl;
       } catch {
         setError("حدث خطأ أثناء تسجيل الدخول");
       } finally {
         setLoading(false);
       }
     },
-    [form, callbackUrl, router]
+    [form, callbackUrl]
   );
 
   const handleGoogle = useCallback(async () => {
