@@ -38,8 +38,11 @@ function LoginForm() {
           return;
         }
 
-        router.push(callbackUrl);
-        router.refresh();
+        if (result?.ok) {
+          await fetch("/api/auth/session").catch(() => {});
+          router.replace(callbackUrl);
+          router.refresh();
+        }
       } catch {
         setError("حدث خطأ أثناء تسجيل الدخول");
       } finally {
